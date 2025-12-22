@@ -8,9 +8,8 @@ It is structured as a **monorepo** with separate apps for clients (schools/stude
 
 ---
 
+```markdown
 ## Folder Structure
-
-```
 
 school-saas/
 ├─ apps/
@@ -28,8 +27,6 @@ school-saas/
 │  ├─ rbac/                       # Role & permission helpers
 │  └─ payments/                   # Payment gateway abstraction (Razorpay, Cashfree)
 └─ package.json                    # Root package.json
-
-```
 
 ---
 

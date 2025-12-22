@@ -1,0 +1,25 @@
+{
+  "name": "school-saas-backend",
+  "version": "1.0.0",
+  "description": "SaaS School Management Backend",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "scripts": {
+    "dev:school-api": "cd apps/client/school-api && nodemon src/server.js",
+    "dev:accounts-api": "cd apps/client/accounts-api && nodemon src/server.js",
+    "dev:crm-client": "cd apps/client/crm && nodemon src/server.js",
+    "dev:platform-api": "cd apps/platform/api && nodemon src/server.js",
+    "dev:platform-crm": "cd apps/platform/crm && nodemon src/server.js",
+    "dev:platform-accounts": "cd apps/platform/accounts && nodemon src/server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "mysql2": "^3.16.0",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

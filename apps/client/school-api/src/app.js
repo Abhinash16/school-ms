@@ -8,7 +8,9 @@ const paymentOrderRoutes = require("./routes/paymentOrder.routes");
 const PaymentGatewayRoutes = require("./routes/paymentGateway.routes");
 const paymentWebhookRoutes = require("./routes/paymentWebhook.routes");
 
+const cors = require("cors");
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.get("/health", (_, res) => {
@@ -40,21 +42,38 @@ createBullBoard({
 app.use("/admin/queues", serverAdapter.getRouter());
 
 app.post("/api/test/add-settlement", async (req, res) => {
-  const settlement = req.body;
+  const payload = req.body; // full payload from Razorpay / Cashfree
 
   try {
+    // Extract necessary info from payload
+    const entity =
+      payload.payload?.payment?.entity || payload.payload?.payment_link?.entity;
+
+    if (!entity?.id || !entity?.notes?.order_id || !entity?.notes?.school_id) {
+      return res
+        .status(400)
+        .json({ error: "Missing required fields in payload" });
+    }
+
+    const settlementQueueId = entity.notes.settlementQueueId || 10; // fallback for testing
+    const jobId = `RAZORPAY:${entity.id}:${payload.event}`;
+
     await paymentSettlementQueue.add(
       "settle-payment",
+      { settlementQueueId },
       {
-        settlementQueueId: 12,
-      },
-      {
-        jobId: `RAZORPAY:pay_Rv1QLashK9f1aaclKaU:payment.captured`,
+        jobId,
+        attempts: 5,
+        backoff: { type: "exponential", delay: 5000 },
+        removeOnComplete: true,
+        removeOnFail: false,
       }
     );
-    return res.json({ status: "job added", settlement });
+
+    console.log(`🧪 Test settlement job added | jobId=${jobId}`);
+    return res.json({ status: "job added", jobId, payload });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error adding settlement job:", err);
     return res.status(500).json({ error: err.message });
   }
 });

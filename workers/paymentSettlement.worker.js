@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("ENV Loaded:", process.env.DB_USER, process.env.DB_PASSWORD);
 
 const { Worker } = require("bullmq");
 const IORedis = require("ioredis");
@@ -115,7 +116,7 @@ const worker = new Worker(
         order_id,
         school_id,
         amount,
-        method: "GATEWAY",
+        method: "PG",
         gateway: settlement.provider,
         gateway_payment_id: settlement.gateway_payment_id,
         status: "SUCCESS",

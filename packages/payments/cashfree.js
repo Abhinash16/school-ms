@@ -1,5 +1,6 @@
 // packages/payments/cashfree.js
 const axios = require("axios");
+const crypto = require("crypto");
 
 class CashfreeProvider {
   constructor({ app_id, secret_key }) {
@@ -21,6 +22,19 @@ class CashfreeProvider {
     });
 
     return data;
+  }
+
+  verifyWebhookSignature(rawBody, signature, timestamp) {
+    const data = rawBody + timestamp;
+
+    const expected = crypto
+      .createHmac("sha256", this.webhook_secret)
+      .update(data)
+      .digest("base64");
+
+    if (expected !== signature) {
+      throw new Error("Invalid Cashfree webhook signature");
+    }
   }
 }
 

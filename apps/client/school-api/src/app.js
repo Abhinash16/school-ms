@@ -6,6 +6,8 @@ const paymentServiceRoutes = require("./routes/paymentService.routes");
 const paymentServiceClassRoutes = require("./routes/paymentServiceClass.routes");
 const paymentOrderRoutes = require("./routes/paymentOrder.routes");
 const PaymentGatewayRoutes = require("./routes/paymentGateway.routes");
+const paymentWebhookRoutes = require("./routes/paymentWebhook.routes");
+
 const app = express();
 app.use(express.json());
 
@@ -20,5 +22,10 @@ app.use("/api/payment-services", paymentServiceRoutes);
 app.use("/api/payment-service-classes", paymentServiceClassRoutes);
 app.use("/api/orders", paymentOrderRoutes);
 app.use("/api/payment-gateways", PaymentGatewayRoutes);
+app.use(
+  "/api/webhooks",
+  express.raw({ type: "application/json" }),
+  paymentWebhookRoutes
+);
 
 module.exports = app;

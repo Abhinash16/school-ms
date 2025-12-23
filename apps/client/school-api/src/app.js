@@ -21,11 +21,7 @@ app.use("/api/students", studentRoutes);
 app.use("/api/payment-services", paymentServiceRoutes);
 app.use("/api/payment-service-classes", paymentServiceClassRoutes);
 app.use("/api/orders", paymentOrderRoutes);
-app.use("/api/payment-gateways", PaymentGatewayRoutes);
-app.use(
-  "/api/webhooks",
-  express.raw({ type: "application/json" }),
-  paymentWebhookRoutes
-);
+app.use("/api/payment", PaymentGatewayRoutes);
+app.use("/api/payments/webhook", paymentWebhookRoutes);
 
 module.exports = app;

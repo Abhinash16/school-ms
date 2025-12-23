@@ -10,9 +10,9 @@ module.exports = {
   async razorpayWebhook(req, res) {
     try {
       const signature = req.headers["x-razorpay-signature"];
-      const payload = req.body.toString();
+      const payload = req.body;
 
-      const event = JSON.parse(payload);
+      const event = payload;
 
       const referenceId =
         event.payload?.payment?.entity?.notes?.reference_id ||
@@ -54,14 +54,13 @@ module.exports = {
       return res.sendStatus(400);
     }
   },
-
   async cashfreeWebhook(req, res) {
     try {
       const signature = req.headers["x-cf-signature"];
       const timestamp = req.headers["x-cf-timestamp"];
-      const payload = req.body.toString();
+      const payload = req.body;
 
-      const event = JSON.parse(payload);
+      const event = payload;
       const orderId = event.data.order.order_id;
 
       const order = await PaymentOrder.findByPk(orderId);

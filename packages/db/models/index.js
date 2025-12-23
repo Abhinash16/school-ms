@@ -5,6 +5,7 @@ const PaymentOrder = require("./PaymentOrder");
 const PaymentOrderLineItem = require("./PaymentOrderLineItem");
 const PaymentService = require("./PaymentService");
 const PaymentServiceClass = require("./PaymentServiceClass");
+const PaymentSettlementQueue = require("./PaymentSettlementQueue");
 const PaymentTransaction = require("./PaymentTransaction");
 
 const School = require("./School");
@@ -88,4 +89,5 @@ module.exports = {
   PaymentTransaction,
   PaymentServiceClass,
   SchoolPaymentGateway,
+  PaymentSettlementQueue,
 };

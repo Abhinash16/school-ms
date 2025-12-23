@@ -3,7 +3,11 @@ const router = express.Router();
 const paymentWebhookController = require("../controllers/paymentWebhook.controller");
 
 // RAW BODY REQUIRED
-router.post("/razorpay", paymentWebhookController.razorpayWebhook);
+router.post(
+  "/razorpay",
+  express.raw({ type: "application/json" }),
+  paymentWebhookController.razorpayWebhook
+);
 
 router.post("/cashfree", paymentWebhookController.cashfreeWebhook);
 

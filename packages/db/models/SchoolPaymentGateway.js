@@ -38,7 +38,7 @@ const SchoolPaymentGateway = sequelize.define(
         const creds = this.credentials;
         switch (this.provider) {
           case "RAZORPAY":
-            if (!creds.key_id || !creds.key_secret) {
+            if (!creds.key_id || !creds.key_secret || creds.webhook_secret) {
               throw new Error(
                 "Razorpay credentials must include key_id and key_secret"
               );

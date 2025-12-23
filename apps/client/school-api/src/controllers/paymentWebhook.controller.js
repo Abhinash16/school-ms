@@ -1,96 +1,129 @@
-const RazorpayProvider = require("../../../../../packages/payments/razorpay");
-const CashfreeProvider = require("../../../../../packages/payments/cashfree");
+const { Sequelize } = require("sequelize");
 const {
-  PaymentOrder,
-  PaymentTransaction,
+  PaymentSettlementQueue,
   SchoolPaymentGateway,
 } = require("../../../../../packages/db/models");
+const RazorpayProvider = require("../../../../../packages/payments/razorpay");
+const paymentSettlementQueue = require("../../../../../queues/paymentSettlement.queue");
 
 module.exports = {
   async razorpayWebhook(req, res) {
     try {
       const signature = req.headers["x-razorpay-signature"];
-      const payload = req.body;
+      if (!signature) {
+        return res.status(400).json({ error: "Signature missing" });
+      }
 
-      const event = payload;
+      const payload = req.body; // express.raw
+      if (!payload) {
+        return res.status(400).json({ error: "Payload missing" });
+      }
 
-      const referenceId =
-        event.payload?.payment?.entity?.notes?.reference_id ||
-        event.payload?.payment_link?.entity?.reference_id;
+      const entity =
+        payload.payload?.payment?.entity ||
+        payload.payload?.payment_link?.entity;
 
-      if (!referenceId) return res.sendStatus(200);
+      if (!entity?.notes?.school_id) {
+        return res.status(200).json({ message: "No school ID, ignoring" });
+      }
 
-      const orderId = referenceId.replace("ORDER_", "");
-
-      const order = await PaymentOrder.findByPk(orderId);
-      if (!order) return res.sendStatus(200);
-
-      const config = await SchoolPaymentGateway.findOne({
-        where: { school_id: order.school_id, provider: "RAZORPAY" },
+      const gateway = await SchoolPaymentGateway.findOne({
+        where: {
+          school_id: entity.notes.school_id,
+          provider: "RAZORPAY",
+          enabled: true,
+        },
       });
 
-      const razorpay = new RazorpayProvider(config);
-      razorpay.verifyWebhookSignature(payload, signature);
+      if (
+        !gateway ||
+        !gateway.credentials?.key_id ||
+        !gateway.credentials?.key_secret ||
+        !gateway.credentials?.webhook_secret
+      ) {
+        console.warn(
+          `Razorpay gateway config incomplete for school: ${entity.notes.school_id}`
+        );
+        return res.status(200).json({
+          message: "Gateway config incomplete, ignoring",
+        });
+      }
 
-      // Idempotency check
-      const exists = await PaymentTransaction.findOne({
-        where: { transaction_id: event.payload.payment.entity.id },
+      const razorpay = new RazorpayProvider({
+        key_id: gateway.credentials.key_id,
+        key_secret: gateway.credentials.key_secret,
+        webhook_secret: gateway.credentials.webhook_secret,
       });
-      if (exists) return res.sendStatus(200);
 
-      await PaymentTransaction.create({
-        order_id: order.id,
-        paid_amount: event.payload.payment.entity.amount / 100,
-        payment_method: "GATEWAY",
-        transaction_id: event.payload.payment.entity.id,
-        status: "SUCCESS",
-      });
+      try {
+        await razorpay.verifyWebhookSignature(
+          JSON.stringify(payload),
+          signature
+        );
+      } catch (err) {
+        console.warn("Webhook verification failed:", err.message);
+        return res.status(200).json({ message: "Invalid signature, ignoring" });
+      }
 
-      await order.update({ status: "PAID" });
+      let settlement;
 
-      return res.sendStatus(200);
+      try {
+        settlement = await PaymentSettlementQueue.create({
+          provider: "RAZORPAY",
+          event_type: payload.event,
+          gateway_payment_id: entity.id,
+
+          order_id: entity.notes.order_id,
+          school_id: entity.notes.school_id,
+
+          reference: entity.notes,
+          payload,
+        });
+      } catch (err) {
+        if (err instanceof Sequelize.UniqueConstraintError) {
+          console.log(
+            `🔁 Duplicate Razorpay webhook ignored | payment_id=${entity.id} | event=${payload.event}`
+          );
+          return res.sendStatus(200);
+        }
+        throw err;
+      }
+
+      // 🚀 Push to worker immediately
+      await paymentSettlementQueue.add(
+        "settle-payment",
+        {
+          settlementQueueId: settlement.id,
+        },
+        {
+          jobId: `${settlement.provider}:${settlement.gateway_payment_id}:${settlement.event_type}`,
+        }
+      );
+
+      return res
+        .status(200)
+        .json({ message: "Webhook processed successfully" });
     } catch (err) {
-      console.error("Razorpay webhook error:", err.message);
-      return res.sendStatus(400);
+      console.error("Razorpay webhook error:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   },
+
   async cashfreeWebhook(req, res) {
     try {
-      const signature = req.headers["x-cf-signature"];
-      const timestamp = req.headers["x-cf-timestamp"];
       const payload = req.body;
 
-      const event = payload;
-      const orderId = event.data.order.order_id;
-
-      const order = await PaymentOrder.findByPk(orderId);
-      if (!order) return res.sendStatus(200);
-
-      const config = await SchoolPaymentGateway.findOne({
-        where: { school_id: order.school_id, provider: "CASHFREE" },
+      await PaymentSettlementQueue.create({
+        provider: "CASHFREE",
+        event_type: payload.type,
+        gateway_payment_id: payload.data.payment.cf_payment_id,
+        reference: payload.data.order.order_note,
+        payload,
       });
-
-      const cashfree = new CashfreeProvider(config);
-      cashfree.verifyWebhookSignature(payload, signature, timestamp);
-
-      const exists = await PaymentTransaction.findOne({
-        where: { transaction_id: event.data.payment.cf_payment_id },
-      });
-      if (exists) return res.sendStatus(200);
-
-      await PaymentTransaction.create({
-        order_id: order.id,
-        paid_amount: event.data.payment.payment_amount,
-        payment_method: "GATEWAY",
-        transaction_id: event.data.payment.cf_payment_id,
-        status: "SUCCESS",
-      });
-
-      await order.update({ status: "PAID" });
 
       return res.sendStatus(200);
     } catch (err) {
-      console.error("Cashfree webhook error:", err.message);
+      console.error("Cashfree webhook:", err.message);
       return res.sendStatus(400);
     }
   },

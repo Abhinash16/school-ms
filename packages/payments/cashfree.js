@@ -13,12 +13,15 @@ class CashfreeProvider {
     });
   }
 
-  async createPaymentLink({ amount, order_id }) {
+  async createPaymentLink({ amount, notes }) {
+    if (!notes?.order_id || !notes?.school_id) {
+      throw new Error("notes must include order_id and school_id");
+    }
     const { data } = await this.client.post("/links", {
       link_amount: amount,
       link_currency: "INR",
-      link_reference_id: `ORDER_${order_id}`,
-      link_purpose: `Payment for Order #${order_id}`,
+      link_purpose: `Payment for Order #${notes.order_id}`,
+      link_notes: notes,
     });
 
     return data;

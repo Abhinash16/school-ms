@@ -11,12 +11,17 @@
     "dev:crm-client": "cd apps/client/crm && nodemon src/server.js",
     "dev:platform-api": "cd apps/platform/api && nodemon src/server.js",
     "dev:platform-crm": "cd apps/platform/crm && nodemon src/server.js",
-    "dev:platform-accounts": "cd apps/platform/accounts && nodemon src/server.js"
+    "dev:platform-accounts": "cd apps/platform/accounts && nodemon src/server.js",
+    "dev:payment-worker": "cd workers && nodemon paymentSettlement.worker.js"
   },
   "dependencies": {
+    "@bull-board/api": "^6.15.0",
+    "@bull-board/express": "^6.15.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.66.2",
     "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
     "mysql2": "^3.16.0",
     "razorpay": "^2.9.6",
     "sequelize": "^6.37.7"

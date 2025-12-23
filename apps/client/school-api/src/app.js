@@ -24,4 +24,39 @@ app.use("/api/orders", paymentOrderRoutes);
 app.use("/api/payment", PaymentGatewayRoutes);
 app.use("/api/payments/webhook", paymentWebhookRoutes);
 
+const { createBullBoard } = require("@bull-board/api");
+const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
+const { ExpressAdapter } = require("@bull-board/express");
+const paymentSettlementQueue = require("../../../../queues/paymentSettlement.queue");
+
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath("/admin/queues");
+
+createBullBoard({
+  queues: [new BullMQAdapter(paymentSettlementQueue)],
+  serverAdapter,
+});
+
+app.use("/admin/queues", serverAdapter.getRouter());
+
+app.post("/api/test/add-settlement", async (req, res) => {
+  const settlement = req.body;
+
+  try {
+    await paymentSettlementQueue.add(
+      "settle-payment",
+      {
+        settlementQueueId: 12,
+      },
+      {
+        jobId: `RAZORPAY:pay_Rv1QLashK9f1aaclKaU:payment.captured`,
+      }
+    );
+    return res.json({ status: "job added", settlement });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = app;

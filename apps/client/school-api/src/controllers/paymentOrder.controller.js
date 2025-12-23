@@ -188,7 +188,14 @@ module.exports = {
       try {
         paymentLinkResponse = await paymentProvider.createPaymentLink({
           amount: order.total_amount,
-          order_id: order.id,
+          notes: {
+            order_id: order.id,
+            reference_type: "ORDER",
+            reference_id: `ORDER_${order.id}`,
+            school_id: order.school_id,
+            service: "FEES",
+            created_at: Date.now(),
+          },
         });
       } catch (err) {
         // Axios / Razorpay error: propagate exact message

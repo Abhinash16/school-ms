@@ -124,8 +124,8 @@ module.exports = {
   async getClassTimetable(req, res) {
     try {
       const { classroom_id } = req.query;
+      const { id: school_id } = req.school;
 
-      // ❌ Edge Case: Missing classroom_id
       if (!classroom_id) {
         return res.status(400).json({
           success: false,
@@ -133,74 +133,89 @@ module.exports = {
         });
       }
 
-      // Fetch timetables for this classroom
+      // 1️⃣ Fetch ALL time slots (master)
+      const allTimeSlots = await TimeSlot.findAll({
+        attributes: ["id", "start_time", "end_time"],
+        order: [["start_time", "ASC"]],
+      });
+
+      // 2️⃣ Fetch timetable + slots
       const timetables = await ClassTimetable.findAll({
-        where: { classroom_id },
+        where: { classroom_id, school_id },
+        attributes: ["id", "day_of_week"],
         include: [
           {
             model: ClassTimetableSlot,
+            attributes: ["time_slot_id"],
             include: [
-              { model: TimeSlot },
-              { model: ClassSubject, include: [Subject, Teacher] },
+              {
+                model: TimeSlot,
+                attributes: ["id", "start_time", "end_time"],
+              },
+              {
+                model: ClassSubject,
+                attributes: ["id"],
+                include: [
+                  {
+                    model: Subject,
+                    attributes: ["id", "name", "type"],
+                  },
+                  {
+                    model: Teacher,
+                    attributes: ["id", "name"],
+                  },
+                ],
+              },
             ],
           },
         ],
       });
 
-      // ❌ Edge Case: No timetables found
-      if (!timetables.length) {
-        const emptyResult = DAYS.reduce((acc, day) => {
-          acc[day] = [];
-          return acc;
-        }, {});
-        console.log("🚀 ~  No timetables found:", emptyResult);
-        return res.json({ success: true, data: emptyResult });
-      }
-
-      // Organize timetable by day
-      const result = DAYS.reduce((acc, day) => {
-        acc[day] = [];
-        return acc;
-      }, {});
+      // 3️⃣ Organize response
+      const result = {};
 
       timetables.forEach((timetable) => {
         const day = timetable.day_of_week;
 
-        if (!timetable.ClassTimetableSlots?.length) return;
+        // Map assigned slots
+        const assignedMap = {};
+        timetable.ClassTimetableSlots.forEach((slot) => {
+          assignedMap[slot.time_slot_id] = slot;
+        });
 
-        result[day] = timetable.ClassTimetableSlots.filter(
-          (slot) =>
-            slot.TimeSlot && slot.ClassSubject && slot.ClassSubject.Subject
-        )
-          .sort((a, b) =>
-            a.TimeSlot.start_time.localeCompare(b.TimeSlot.start_time)
-          )
-          .map((slot) => ({
-            time_slot: {
-              start: slot.TimeSlot.start_time,
-              end: slot.TimeSlot.end_time,
-            },
-            subject: {
-              id: slot.ClassSubject.Subject.id,
-              name: slot.ClassSubject.Subject.name,
-              type: slot.ClassSubject.Subject.type,
-            },
-            teacher: slot.ClassSubject.Teacher
+        // Fill ALL time slots
+        result[day] = allTimeSlots.map((ts) => {
+          const assigned = assignedMap[ts.id];
+
+          return {
+            time_slot_id: ts.id,
+            time: `${ts.start_time} - ${ts.end_time}`,
+            subject: assigned?.ClassSubject?.Subject
               ? {
-                  id: slot.ClassSubject.Teacher.id,
-                  name: slot.ClassSubject.Teacher.name,
+                  id: assigned.ClassSubject.Subject.id,
+                  name: assigned.ClassSubject.Subject.name,
+                  type: assigned.ClassSubject.Subject.type,
                 }
               : null,
-          }));
+            teacher: assigned?.ClassSubject?.Teacher
+              ? {
+                  id: assigned.ClassSubject.Teacher.id,
+                  name: assigned.ClassSubject.Teacher.name,
+                }
+              : null,
+          };
+        });
       });
 
-      return res.json({ success: true, data: result });
+      return res.json({
+        success: true,
+        data: result,
+      });
     } catch (err) {
-      console.error("❌ Error fetching timetable:", err);
+      console.error("❌ Timetable Fetch Error:", err);
       return res.status(500).json({
         success: false,
-        message: "Something went wrong while fetching timetable",
-        error: err.message,
+        message: err.message,
       });
     }
   },

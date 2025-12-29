@@ -89,13 +89,19 @@ ClassTimetable.belongsTo(Classroom);
 ClassTimetable.hasMany(ClassTimetableSlot, {
   foreignKey: "class_timetable_id",
 });
-ClassTimetableSlot.belongsTo(ClassTimetable);
+ClassTimetableSlot.belongsTo(ClassTimetable, {
+  foreignKey: "class_timetable_id",
+});
 
 TimeSlot.hasMany(ClassTimetableSlot, { foreignKey: "time_slot_id" });
-ClassTimetableSlot.belongsTo(TimeSlot);
+ClassTimetableSlot.belongsTo(TimeSlot, {
+  foreignKey: "time_slot_id",
+});
 
 ClassSubject.hasMany(ClassTimetableSlot, { foreignKey: "class_subject_id" });
-ClassTimetableSlot.belongsTo(ClassSubject);
+ClassTimetableSlot.belongsTo(ClassSubject, {
+  foreignKey: "class_subject_id",
+});
 
 Classroom.hasMany(ClassSubject, { foreignKey: "classroom_id" });
 ClassSubject.belongsTo(Classroom, { foreignKey: "classroom_id" });

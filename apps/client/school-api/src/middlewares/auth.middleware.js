@@ -25,6 +25,7 @@ function authenticateSchool(req, res, next) {
       id: decoded.school_id,
       email: decoded.email,
       role: decoded.role,
+      user_id: decoded.user_id,
     };
 
     next();

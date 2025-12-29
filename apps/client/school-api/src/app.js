@@ -7,6 +7,14 @@ const paymentServiceClassRoutes = require("./routes/paymentServiceClass.routes")
 const paymentOrderRoutes = require("./routes/paymentOrder.routes");
 const PaymentGatewayRoutes = require("./routes/paymentGateway.routes");
 const paymentWebhookRoutes = require("./routes/paymentWebhook.routes");
+const subjectRoutes = require("./routes/subject.routes");
+const timeSlotRoutes = require("./routes/timeSlots.routes");
+const classSubjectRoutes = require("./routes/classSubjects.routes");
+
+const classTimetableRoutes = require("./routes/classTimetable.routes");
+const classTimetableSlotsRoutes = require("./routes/classTimetableSlots.routes");
+
+const teacherRoutes = require("./routes/teacher.routes");
 
 const cors = require("cors");
 const app = express();
@@ -25,6 +33,12 @@ app.use("/api/payment-service-classes", paymentServiceClassRoutes);
 app.use("/api/orders", paymentOrderRoutes);
 app.use("/api/payment", PaymentGatewayRoutes);
 app.use("/api/payments/webhook", paymentWebhookRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/time-slots", timeSlotRoutes);
+app.use("/api/class-subject", classSubjectRoutes);
+app.use("/api/class-time-table", classTimetableRoutes);
+app.use("/api/class-time-table-routes", classTimetableSlotsRoutes);
+app.use("/api/teachers", teacherRoutes);
 
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");

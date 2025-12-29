@@ -1,6 +1,9 @@
 // packages/db/models/index.js
 const { sequelize } = require("../index");
 const Classroom = require("./Classroom");
+const ClassSubject = require("./ClassSubject");
+const ClassTimetable = require("./ClassTimetable");
+const ClassTimetableSlot = require("./ClassTimetableSlot");
 const PaymentOrder = require("./PaymentOrder");
 const PaymentOrderLineItem = require("./PaymentOrderLineItem");
 const PaymentService = require("./PaymentService");
@@ -11,6 +14,9 @@ const PaymentTransaction = require("./PaymentTransaction");
 const School = require("./School");
 const SchoolPaymentGateway = require("./SchoolPaymentGateway");
 const Student = require("./Student");
+const Subject = require("./Subject");
+const Teacher = require("./Teacher");
+const TimeSlot = require("./TimeSlot");
 const UserAgent = require("./UserAgent");
 
 // Associations
@@ -76,6 +82,29 @@ Classroom.belongsToMany(PaymentService, {
   otherKey: "service_id",
   as: "services",
 });
+
+Classroom.hasMany(ClassTimetable, { foreignKey: "classroom_id" });
+ClassTimetable.belongsTo(Classroom);
+
+ClassTimetable.hasMany(ClassTimetableSlot, {
+  foreignKey: "class_timetable_id",
+});
+ClassTimetableSlot.belongsTo(ClassTimetable);
+
+TimeSlot.hasMany(ClassTimetableSlot, { foreignKey: "time_slot_id" });
+ClassTimetableSlot.belongsTo(TimeSlot);
+
+ClassSubject.hasMany(ClassTimetableSlot, { foreignKey: "class_subject_id" });
+ClassTimetableSlot.belongsTo(ClassSubject);
+
+Classroom.hasMany(ClassSubject, { foreignKey: "classroom_id" });
+ClassSubject.belongsTo(Classroom, { foreignKey: "classroom_id" });
+
+Subject.hasMany(ClassSubject, { foreignKey: "subject_id" });
+ClassSubject.belongsTo(Subject, { foreignKey: "subject_id" });
+
+Teacher.hasMany(ClassSubject, { foreignKey: "teacher_id" });
+ClassSubject.belongsTo(Teacher, { foreignKey: "teacher_id" });
 
 module.exports = {
   sequelize,

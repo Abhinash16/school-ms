@@ -77,7 +77,7 @@ module.exports = {
     const transaction = await sequelize.transaction();
     try {
       const school_id = req.school.id;
-      const admin_id = req.user?.id;
+      const admin_id = req.school?.id;
 
       const { order_id } = req.params;
       const { amount, method } = req.body;
@@ -236,7 +236,7 @@ module.exports = {
         gateway: provider,
         gateway_payment_id,
         status: "PENDING",
-        created_by: req.user?.id || null,
+        created_by: req.school?.id || null,
       });
 
       return res.json({

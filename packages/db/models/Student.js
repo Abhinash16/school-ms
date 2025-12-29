@@ -33,6 +33,10 @@ const Student = sequelize.define(
     dob: DataTypes.DATEONLY,
     phone: DataTypes.STRING,
     email: DataTypes.STRING,
+    roll_no: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // can be null initially
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -47,6 +51,10 @@ const Student = sequelize.define(
       {
         unique: true,
         fields: ["school_id", "admission_no"],
+      },
+      {
+        unique: true,
+        fields: ["classroom_id", "roll_no"], // ensure no duplicate roll_no per class
       },
     ],
   }

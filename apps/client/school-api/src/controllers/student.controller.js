@@ -4,6 +4,7 @@ const {
   PaymentOrderLineItem,
   PaymentTransaction,
 } = require("../../../../../packages/db/models");
+const handleSQLError = require("../utils/sqlErrorHandler");
 
 module.exports = {
   async createStudent(req, res) {
@@ -18,6 +19,7 @@ module.exports = {
         admission_no,
         dob,
         gender,
+        roll_no,
       } = req.body;
 
       const student = await Student.create({
@@ -30,11 +32,13 @@ module.exports = {
         admission_no,
         dob,
         gender,
+        roll_no,
       });
 
       res.status(201).json({ success: true, data: student });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      const errorResponse = handleSQLError(err);
+      return res.status(500).json(errorResponse);
     }
   },
 

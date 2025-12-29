@@ -1,9 +1,13 @@
 // packages/db/models/index.js
 const { sequelize } = require("../index");
 const Classroom = require("./Classroom");
+const ClassroomLayout = require("./ClassroomLayout");
 const ClassSubject = require("./ClassSubject");
 const ClassTimetable = require("./ClassTimetable");
 const ClassTimetableSlot = require("./ClassTimetableSlot");
+const LayoutBench = require("./LayoutBench");
+const LayoutBenchStudent = require("./LayoutBenchStudent");
+const LayoutRow = require("./LayoutRow");
 const PaymentOrder = require("./PaymentOrder");
 const PaymentOrderLineItem = require("./PaymentOrderLineItem");
 const PaymentService = require("./PaymentService");
@@ -111,6 +115,51 @@ ClassSubject.belongsTo(Subject, { foreignKey: "subject_id" });
 
 Teacher.hasMany(ClassSubject, { foreignKey: "teacher_id" });
 ClassSubject.belongsTo(Teacher, { foreignKey: "teacher_id" });
+
+// Classroom → ClassroomLayout
+Classroom.hasMany(ClassroomLayout, {
+  foreignKey: "classroom_id",
+  onDelete: "CASCADE",
+});
+ClassroomLayout.belongsTo(Classroom, {
+  foreignKey: "classroom_id",
+});
+
+// ClassroomLayout → LayoutRow
+ClassroomLayout.hasMany(LayoutRow, {
+  foreignKey: "classroom_layout_id",
+  onDelete: "CASCADE",
+});
+LayoutRow.belongsTo(ClassroomLayout, {
+  foreignKey: "classroom_layout_id",
+});
+
+// LayoutRow → LayoutBench
+LayoutRow.hasMany(LayoutBench, {
+  foreignKey: "layout_row_id",
+  onDelete: "CASCADE",
+});
+LayoutBench.belongsTo(LayoutRow, {
+  foreignKey: "layout_row_id",
+});
+
+// LayoutBench → LayoutBenchStudent
+LayoutBench.hasMany(LayoutBenchStudent, {
+  foreignKey: "layout_bench_id",
+  onDelete: "CASCADE",
+});
+LayoutBenchStudent.belongsTo(LayoutBench, {
+  foreignKey: "layout_bench_id",
+});
+
+// Student → LayoutBenchStudent
+Student.hasMany(LayoutBenchStudent, {
+  foreignKey: "student_id",
+  onDelete: "CASCADE",
+});
+LayoutBenchStudent.belongsTo(Student, {
+  foreignKey: "student_id",
+});
 
 module.exports = {
   sequelize,

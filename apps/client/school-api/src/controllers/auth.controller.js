@@ -18,9 +18,20 @@ module.exports = {
       // Find user
       const user = await UserAgent.findOne({
         where: { email },
+        attributes: [
+          "id",
+          "first_name",
+          "last_name",
+          "email",
+          "phone",
+          "role",
+          "status",
+          "school_id",
+          "password",
+        ],
         include: {
           model: School,
-          attributes: ["id", "status"],
+          attributes: ["id", "name", "status"],
         },
       });
 
@@ -66,9 +77,13 @@ module.exports = {
         token,
         user: {
           id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
           email: user.email,
+          phone: user.phone,
           role: user.role,
           school_id: user.school_id,
+          school: user.School,
         },
       });
     } catch (err) {

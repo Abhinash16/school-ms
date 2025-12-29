@@ -35,4 +35,25 @@ module.exports = {
       res.status(500).json({ success: false, message: err.message });
     }
   },
+
+  // ✅ Get Classroom by ID
+  async getClassroomById(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Make sure the classroom belongs to the school
+      const classroom = await Classroom.findOne({
+        where: { id, school_id: req.school.id },
+      });
+
+      if (!classroom)
+        return res
+          .status(404)
+          .json({ success: false, message: "Classroom not found" });
+
+      res.json({ success: true, data: classroom });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
 };

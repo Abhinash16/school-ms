@@ -10,5 +10,7 @@ router.post(
   "/:order_id/payment-link",
   paymentOrderController.createPaymentLink
 );
+router.get("/", paymentOrderController.listOrders);
+router.get("/:order_id", paymentOrderController.getOrderById);
 
 module.exports = router;

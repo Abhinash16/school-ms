@@ -5,5 +5,6 @@ const { authenticateSchool } = require("../middlewares/auth.middleware");
 
 router.post("/", authenticateSchool, ClassroomController.createClassroom);
 router.get("/", authenticateSchool, ClassroomController.listClassrooms);
+router.get("/:id", authenticateSchool, ClassroomController.getClassroomById);
 
 module.exports = router;

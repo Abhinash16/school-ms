@@ -77,7 +77,7 @@ module.exports = {
     const transaction = await sequelize.transaction();
     try {
       const school_id = req.school.id;
-      const admin_id = req.user.id;
+      const admin_id = req.user?.id;
 
       const { order_id } = req.params;
       const { amount, method } = req.body;
@@ -249,6 +249,79 @@ module.exports = {
       });
     } catch (err) {
       console.error("createPaymentLink error:", err);
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+
+  // ✅ List all orders for a school
+  async listOrders(req, res) {
+    try {
+      const school_id = req.school.id;
+
+      const orders = await PaymentOrder.findAll({
+        where: { school_id },
+        include: [
+          {
+            model: PaymentOrderLineItem,
+            as: "PaymentOrderLineItems",
+          },
+          {
+            model: PaymentTransaction,
+            as: "PaymentTransactions",
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      return res.json({
+        success: true,
+        data: orders,
+      });
+    } catch (err) {
+      console.error("listOrders error:", err);
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+
+  // ✅ Get single order by ID
+  async getOrderById(req, res) {
+    try {
+      const school_id = req.school.id;
+      const { order_id } = req.params;
+
+      const order = await PaymentOrder.findOne({
+        where: { id: order_id, school_id },
+        include: [
+          {
+            model: PaymentOrderLineItem,
+            as: "PaymentOrderLineItems",
+          },
+          {
+            model: PaymentTransaction,
+            as: "PaymentTransactions",
+          },
+        ],
+      });
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: order,
+      });
+    } catch (err) {
+      console.error("getOrderById error:", err);
       return res.status(500).json({
         success: false,
         message: err.message,

@@ -11,5 +11,11 @@ router.get(
   StudentController.getStudentsByClass
 );
 router.get("/:id", authenticateSchool, StudentController.getStudentById);
+router.get(
+  "/:id/payments",
+  authenticateSchool,
+  StudentController.getStudentPayments
+);
+router.put("/:id", authenticateSchool, StudentController.updateStudent);
 
 module.exports = router;

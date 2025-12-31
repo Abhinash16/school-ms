@@ -90,4 +90,59 @@ module.exports = {
       return res.status(500).json({ success: false, message: err.message });
     }
   },
+
+  /**
+   * Update single teacher
+   */
+  async updateTeacher(req, res) {
+    try {
+      const { id } = req.params; // teacher id
+      const { name, email, phone, status } = req.body;
+      const { id: school_id } = req.school;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: "Teacher id is required",
+        });
+      }
+
+      const teacher = await Teacher.findOne({
+        where: { id, school_id },
+      });
+
+      if (!teacher) {
+        return res.status(404).json({
+          success: false,
+          message: "Teacher not found",
+        });
+      }
+
+      // Update only provided fields
+      if (name !== undefined) teacher.name = name.trim();
+      if (email !== undefined) teacher.email = email?.trim() || null;
+      if (phone !== undefined) teacher.phone = phone?.trim() || null;
+      if (status !== undefined) teacher.status = status;
+
+      await teacher.save();
+
+      return res.json({
+        success: true,
+        data: teacher,
+        message: "Teacher updated successfully",
+      });
+    } catch (err) {
+      if (err.name === "SequelizeUniqueConstraintError") {
+        return res.status(409).json({
+          success: false,
+          message: "Email or phone already exists",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
 };

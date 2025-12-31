@@ -146,7 +146,7 @@ module.exports = {
         include: [
           {
             model: ClassTimetableSlot,
-            attributes: ["time_slot_id"],
+            attributes: ["id", "time_slot_id"],
             include: [
               {
                 model: TimeSlot,
@@ -188,6 +188,7 @@ module.exports = {
           const assigned = assignedMap[ts.id];
 
           return {
+            id: assigned ? assigned.id : null,
             time_slot_id: ts.id,
             time: `${ts.start_time} - ${ts.end_time}`,
             subject: assigned?.ClassSubject?.Subject

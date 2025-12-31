@@ -140,6 +140,7 @@ module.exports = {
         gender,
         classroom_id,
         admission_no,
+        roll_no,
       } = req.body;
 
       // Find student
@@ -161,6 +162,7 @@ module.exports = {
       student.admission_no = admission_no ?? student.admission_no;
       student.dob = dob ?? student.dob;
       student.gender = gender ?? student.gender;
+      student.roll_no = roll_no ?? student.roll_no;
 
       await student.save();
 

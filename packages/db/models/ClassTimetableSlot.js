@@ -30,6 +30,13 @@ const ClassTimetableSlot = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    // Label as ENUM
+    label: {
+      type: DataTypes.ENUM("permanent", "temporary"),
+      allowNull: false,
+      defaultValue: "permanent", // default is permanent
+    },
   },
   {
     tableName: "class_timetable_slots",

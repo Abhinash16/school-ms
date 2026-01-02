@@ -7,9 +7,13 @@ module.exports = {
    */
   async assignSlot(req, res) {
     try {
-      const { classroom_id, day_of_week, time_slot_id, class_subject_id } =
-        req.body;
-
+      const {
+        classroom_id,
+        day_of_week,
+        time_slot_id,
+        class_subject_id,
+        label,
+      } = req.body;
       const { id: school_id } = req.school;
 
       if (!classroom_id || !day_of_week || !time_slot_id || !class_subject_id) {
@@ -20,6 +24,7 @@ module.exports = {
         });
       }
 
+      // Find the timetable for the classroom/day
       const timetable = await ClassTimetable.findOne({
         where: { school_id, classroom_id, day_of_week },
       });
@@ -31,16 +36,28 @@ module.exports = {
         });
       }
 
-      const [slot] = await ClassTimetableSlot.findOrCreate({
+      // Try to find existing slot
+      let slot = await ClassTimetableSlot.findOne({
         where: {
           school_id,
           class_timetable_id: timetable.id,
           time_slot_id,
         },
-        defaults: {
-          class_subject_id,
-        },
       });
+
+      if (slot) {
+        // If exists, update class_subject_id and label
+        await slot.update({ class_subject_id, label });
+      } else {
+        // If not exists, create a new slot
+        slot = await ClassTimetableSlot.create({
+          school_id,
+          class_timetable_id: timetable.id,
+          time_slot_id,
+          class_subject_id,
+          label,
+        });
+      }
 
       return res.json({
         success: true,

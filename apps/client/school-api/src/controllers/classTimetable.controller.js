@@ -146,7 +146,7 @@ module.exports = {
         include: [
           {
             model: ClassTimetableSlot,
-            attributes: ["id", "time_slot_id"],
+            attributes: ["id", "time_slot_id", "label"],
             include: [
               {
                 model: TimeSlot,
@@ -190,6 +190,7 @@ module.exports = {
           return {
             id: assigned ? assigned.id : null,
             time_slot_id: ts.id,
+            label: assigned ? assigned.label : "permanent",
             time: `${ts.start_time} - ${ts.end_time}`,
             subject: assigned?.ClassSubject?.Subject
               ? {

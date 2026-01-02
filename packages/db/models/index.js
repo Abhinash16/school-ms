@@ -23,6 +23,9 @@ const Teacher = require("./Teacher");
 const TimeSlot = require("./TimeSlot");
 const UserAgent = require("./UserAgent");
 
+const Book = require("./Book");
+const BookIssue = require("./BookIssue");
+
 // Associations
 School.hasMany(UserAgent, {
   foreignKey: "school_id",
@@ -161,6 +164,14 @@ LayoutBenchStudent.belongsTo(Student, {
   foreignKey: "student_id",
 });
 
+Book.belongsTo(Classroom, { foreignKey: "classroom_id" });
+Classroom.hasMany(Book, { foreignKey: "classroom_id" });
+
+BookIssue.belongsTo(Book, { foreignKey: "book_id" });
+BookIssue.belongsTo(Student, { foreignKey: "student_id" });
+Book.hasMany(BookIssue, { foreignKey: "book_id" });
+Student.hasMany(BookIssue, { foreignKey: "student_id" });
+
 module.exports = {
   sequelize,
   School,
@@ -174,4 +185,6 @@ module.exports = {
   PaymentServiceClass,
   SchoolPaymentGateway,
   PaymentSettlementQueue,
+  Book,
+  BookIssue,
 };

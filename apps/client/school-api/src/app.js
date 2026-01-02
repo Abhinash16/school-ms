@@ -14,6 +14,7 @@ const classSubjectRoutes = require("./routes/classSubjects.routes");
 const classTimetableRoutes = require("./routes/classTimetable.routes");
 const classTimetableSlotsRoutes = require("./routes/classTimetableSlots.routes");
 const classRoomLayoutRoutes = require("./routes/classroomLayout.routes");
+const bookRoutes = require("./routes/book.routes");
 
 const teacherRoutes = require("./routes/teacher.routes");
 
@@ -40,6 +41,7 @@ app.use("/api/class-subject", classSubjectRoutes);
 app.use("/api/class-time-table", classTimetableRoutes);
 app.use("/api/class-time-table-routes", classTimetableSlotsRoutes);
 app.use("/api/teachers", teacherRoutes);
+app.use("/api/books", bookRoutes);
 
 app.use("/api/classroom-layout", classRoomLayoutRoutes);
 

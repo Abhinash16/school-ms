@@ -101,6 +101,83 @@ module.exports = {
     }
   },
 
+  // controllers/timeSlotController.js
+
+  async updateTimeSlot(req, res) {
+    try {
+      const { id } = req.params;
+      const { start_time, end_time } = req.body;
+      const { id: school_id } = req.school;
+
+      if (!start_time || !end_time) {
+        return res.status(400).json({
+          success: false,
+          message: "start_time and end_time are required",
+        });
+      }
+
+      const slot = await TimeSlot.findOne({
+        where: { id, school_id },
+      });
+
+      if (!slot) {
+        return res.status(404).json({
+          success: false,
+          message: "Time slot not found",
+        });
+      }
+
+      await slot.update({ start_time, end_time });
+
+      return res.json({
+        success: true,
+        data: slot,
+      });
+    } catch (err) {
+      if (err.name === "SequelizeUniqueConstraintError") {
+        return res.status(409).json({
+          success: false,
+          message: "Time slot already exists",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+
+  async deleteTimeSlot(req, res) {
+    try {
+      const { id } = req.params;
+      const { id: school_id } = req.school;
+
+      const slot = await TimeSlot.findOne({
+        where: { id, school_id },
+      });
+
+      if (!slot) {
+        return res.status(404).json({
+          success: false,
+          message: "Time slot not found",
+        });
+      }
+
+      await slot.destroy();
+
+      return res.json({
+        success: true,
+        message: "Time slot deleted successfully",
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+
   async getTimeSlots(req, res) {
     try {
       const { id: school_id } = req.school;

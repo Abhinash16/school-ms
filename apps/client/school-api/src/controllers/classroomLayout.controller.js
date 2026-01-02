@@ -168,7 +168,7 @@ module.exports = {
   async addBench(req, res) {
     try {
       const { row_id } = req.params;
-      const { bench_no, seat_capacity = 2 } = req.body;
+      const { bench_no, seat_capacity } = req.body;
       const school_id = req.school.id;
 
       if (!bench_no) {
@@ -449,6 +449,88 @@ module.exports = {
     } catch (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: err.message });
+    }
+  },
+  async duplicateLayoutEmpty(req, res) {
+    const transaction = await ClassroomLayout.sequelize.transaction();
+    try {
+      const { layout_id } = req.params;
+      const { name } = req.body;
+      const { id: school_id } = req.school;
+
+      if (!req.school) {
+        await transaction.rollback();
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const sourceLayout = await ClassroomLayout.findOne({
+        where: { id: layout_id, school_id },
+        include: [
+          {
+            model: LayoutRow,
+            include: [LayoutBench],
+          },
+        ],
+        transaction,
+      });
+
+      if (!sourceLayout) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Source layout not found",
+        });
+      }
+
+      const newLayout = await ClassroomLayout.create(
+        {
+          school_id,
+          classroom_id: sourceLayout.classroom_id,
+          name: name?.trim() || `${sourceLayout.name} (Copy)`,
+          description: sourceLayout.description,
+        },
+        { transaction }
+      );
+
+      for (const row of sourceLayout.LayoutRows) {
+        const newRow = await LayoutRow.create(
+          {
+            school_id,
+            classroom_layout_id: newLayout.id,
+            row_no: row.row_no,
+          },
+          { transaction }
+        );
+
+        for (const bench of row.LayoutBenches) {
+          await LayoutBench.create(
+            {
+              school_id,
+              layout_row_id: newRow.id,
+              bench_no: bench.bench_no,
+              seat_capacity: bench.seat_capacity,
+            },
+            { transaction }
+          );
+        }
+      }
+
+      await transaction.commit();
+
+      return res.json({
+        success: true,
+        message: "Layout duplicated successfully",
+        data: newLayout,
+      });
+    } catch (err) {
+      await transaction.rollback();
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
     }
   },
 };

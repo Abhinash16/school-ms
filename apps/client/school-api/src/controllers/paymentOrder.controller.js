@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const {
   sequelize,
   PaymentOrder,
@@ -261,12 +262,45 @@ module.exports = {
     try {
       const school_id = req.school.id;
 
+      const { service_id, class_id, status, search } = req.query;
+
+      /* -----------------------------
+       * Order-level filters
+       * --------------------------- */
+      const orderWhere = { school_id };
+
+      if (status) {
+        orderWhere.status = status;
+      }
+
+      if (search) {
+        orderWhere.student_id = {
+          [Op.like]: `%${search}%`,
+        };
+      }
+
+      /* -----------------------------
+       * Line item filters
+       * --------------------------- */
+      const lineItemWhere = {};
+
+      if (service_id) {
+        lineItemWhere.service_id = service_id;
+      }
+
+      if (class_id) {
+        lineItemWhere.class_id = class_id;
+      }
+
       const orders = await PaymentOrder.findAll({
-        where: { school_id },
+        where: orderWhere,
         include: [
           {
             model: PaymentOrderLineItem,
             as: "PaymentOrderLineItems",
+            where:
+              Object.keys(lineItemWhere).length > 0 ? lineItemWhere : undefined,
+            required: !!(service_id || class_id),
           },
           {
             model: PaymentTransaction,
@@ -274,6 +308,7 @@ module.exports = {
           },
         ],
         order: [["createdAt", "DESC"]],
+        distinct: true, // ✅ prevent duplicates
       });
 
       return res.json({

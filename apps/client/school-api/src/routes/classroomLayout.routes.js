@@ -70,6 +70,11 @@ router.get(
   authenticateSchool,
   classroomLayoutController.getBenches
 );
+router.post(
+  "/layouts/:layout_id/duplicate-empty",
+  authenticateSchool,
+  classroomLayoutController.duplicateLayoutEmpty
+);
 
 // Delete a bench
 router.delete(

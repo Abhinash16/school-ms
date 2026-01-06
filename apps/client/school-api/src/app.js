@@ -18,6 +18,8 @@ const bookRoutes = require("./routes/book.routes");
 
 const teacherRoutes = require("./routes/teacher.routes");
 
+const examRoutes = require("./routes/exam.routes");
+
 const cors = require("cors");
 const app = express();
 app.use(cors());
@@ -44,6 +46,8 @@ app.use("/api/teachers", teacherRoutes);
 app.use("/api/books", bookRoutes);
 
 app.use("/api/classroom-layout", classRoomLayoutRoutes);
+
+app.use("/api/exam", examRoutes);
 
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");

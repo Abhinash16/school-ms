@@ -147,3 +147,43 @@ exports.returnBook = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+/**
+ * GET /books/:book_id/students
+ * List students who have taken a specific book
+ */
+exports.getStudentsByBook = async (req, res) => {
+  try {
+    const { book_id } = req.params;
+
+    const book = await Book.findByPk(book_id);
+    if (!book) return res.status(404).json({ message: "Book not found" });
+
+    // Fetch all issued students for this book
+    const issues = await BookIssue.findAll({
+      where: { book_id },
+      include: [
+        {
+          model: Student,
+          attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "classroom_id",
+          ], // pick required fields
+        },
+      ],
+    });
+
+    const students = issues.map((issue) => issue.Student);
+
+    return res.status(200).json({
+      count: students.length,
+      data: students,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

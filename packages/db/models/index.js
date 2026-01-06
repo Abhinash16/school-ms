@@ -26,6 +26,11 @@ const UserAgent = require("./UserAgent");
 const Book = require("./Book");
 const BookIssue = require("./BookIssue");
 
+const Exam = require("./Exam");
+const ExamClass = require("./ExamClass");
+const ExamSubject = require("./ExamSubject");
+const StudentExamMark = require("./StudentExamMark");
+
 // Associations
 School.hasMany(UserAgent, {
   foreignKey: "school_id",
@@ -172,12 +177,74 @@ BookIssue.belongsTo(Student, { foreignKey: "student_id" });
 Book.hasMany(BookIssue, { foreignKey: "book_id" });
 Student.hasMany(BookIssue, { foreignKey: "student_id" });
 
+/* =========================
+    EXAM ASSOCIATIONS 
+========================= */
+
+// School → Exam
+School.hasMany(Exam, { foreignKey: "school_id", onDelete: "CASCADE" });
+Exam.belongsTo(School, { foreignKey: "school_id" });
+
+// Exam ↔ Classroom (M:N)
+Exam.belongsToMany(Classroom, {
+  through: ExamClass,
+  foreignKey: "exam_id",
+});
+Classroom.belongsToMany(Exam, {
+  through: ExamClass,
+  foreignKey: "classroom_id",
+});
+
+// Exam → Subjects (Class-wise)
+Exam.hasMany(ExamSubject, { foreignKey: "exam_id" });
+ExamSubject.belongsTo(Exam, { foreignKey: "exam_id" });
+
+Classroom.hasMany(ExamSubject, { foreignKey: "classroom_id" });
+ExamSubject.belongsTo(Classroom, { foreignKey: "classroom_id" });
+
+Subject.hasMany(ExamSubject, { foreignKey: "subject_id" });
+ExamSubject.belongsTo(Subject, { foreignKey: "subject_id" });
+
+// Student → Exam Marks
+Student.hasMany(StudentExamMark, { foreignKey: "student_id" });
+StudentExamMark.belongsTo(Student, { foreignKey: "student_id" });
+
+Exam.hasMany(StudentExamMark, { foreignKey: "exam_id" });
+StudentExamMark.belongsTo(Exam, { foreignKey: "exam_id" });
+
+Classroom.hasMany(StudentExamMark, { foreignKey: "classroom_id" });
+StudentExamMark.belongsTo(Classroom, { foreignKey: "classroom_id" });
+
+Subject.hasMany(StudentExamMark, { foreignKey: "subject_id" });
+StudentExamMark.belongsTo(Subject, { foreignKey: "subject_id" });
+
+// StudentExamMark → ExamSubject
+ExamSubject.hasMany(StudentExamMark, {
+  foreignKey: "subject_id",
+  sourceKey: "subject_id",
+  as: "marks",
+});
+StudentExamMark.belongsTo(ExamSubject, {
+  foreignKey: "subject_id",
+  targetKey: "subject_id",
+  as: "ExamSubject",
+});
+
+/* =========================
+   EXPORTS
+========================= */
 module.exports = {
   sequelize,
   School,
   UserAgent,
   Classroom,
   Student,
+  Subject,
+  Teacher,
+  Exam,
+  ExamClass,
+  ExamSubject,
+  StudentExamMark,
   PaymentOrder,
   PaymentOrderLineItem,
   PaymentService,

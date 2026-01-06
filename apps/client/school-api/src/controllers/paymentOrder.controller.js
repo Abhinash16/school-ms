@@ -4,6 +4,7 @@ const {
   PaymentOrder,
   PaymentOrderLineItem,
   PaymentTransaction,
+  PaymentService,
 } = require("../../../../../packages/db/models");
 const SchoolPaymentGateway = require("../../../../../packages/db/models/SchoolPaymentGateway");
 const { getPaymentProvider } = require("../../../../../packages/payments");
@@ -336,6 +337,13 @@ module.exports = {
           {
             model: PaymentOrderLineItem,
             as: "PaymentOrderLineItems",
+            include: [
+              {
+                model: PaymentService,
+                as: "PaymentService",
+                attributes: ["id", "title"],
+              },
+            ],
           },
           {
             model: PaymentTransaction,

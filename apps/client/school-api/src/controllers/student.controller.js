@@ -5,6 +5,7 @@ const {
   PaymentTransaction,
 } = require("../../../../../packages/db/models");
 const handleSQLError = require("../utils/sqlErrorHandler");
+const { Op } = require("sequelize");
 
 module.exports = {
   async createStudent(req, res) {
@@ -44,10 +45,32 @@ module.exports = {
 
   async listStudents(req, res) {
     try {
-      const students = await Student.findAll();
+      const { search } = req.query;
+
+      let whereCondition = {};
+
+      if (search) {
+        whereCondition = {
+          [Op.or]: [
+            { first_name: { [Op.like]: `%${search}%` } },
+            { last_name: { [Op.like]: `%${search}%` } },
+            { email: { [Op.like]: `%${search}%` } },
+            { phone: { [Op.like]: `%${search}%` } },
+          ],
+        };
+      }
+
+      const students = await Student.findAll({
+        where: whereCondition,
+        order: [["createdAt", "DESC"]],
+      });
+
       res.json({ success: true, data: students });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      res.status(500).json({
+        success: false,
+        message: err.message,
+      });
     }
   },
 

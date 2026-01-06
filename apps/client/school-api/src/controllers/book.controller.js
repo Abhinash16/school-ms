@@ -187,3 +187,56 @@ exports.getStudentsByBook = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+/**
+ * GET /students/:student_id/books
+ * Get all books issued to a student
+ */
+exports.getBooksByStudent = async (req, res) => {
+  try {
+    const { student_id } = req.params;
+
+    if (!student_id) {
+      return res.status(400).json({
+        message: "student_id is required",
+      });
+    }
+
+    const student = await Student.findByPk(student_id);
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found",
+      });
+    }
+
+    const issues = await BookIssue.findAll({
+      where: {
+        student_id,
+        status: "ISSUED",
+      },
+      include: [
+        {
+          model: Book,
+          attributes: ["id", "title", "author", "isbn", "classroom_id"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const books = issues.map((issue) => ({
+      issue_id: issue.id,
+      issue_date: issue.issue_date,
+      book: issue.Book,
+    }));
+
+    return res.status(200).json({
+      count: books.length,
+      data: books,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};

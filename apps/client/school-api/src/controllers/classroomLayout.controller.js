@@ -372,7 +372,7 @@ module.exports = {
         });
       }
 
-      // 2️⃣ Determine classroom_id from layout
+      // 2️⃣ Get classroom_id from layout
       const layout = await ClassroomLayout.findByPk(classroom_layout_id);
       if (!layout) {
         return res.status(404).json({
@@ -380,13 +380,15 @@ module.exports = {
           message: "Classroom layout not found",
         });
       }
+
       const classroom_id = layout.classroom_id;
 
-      // 3️⃣ Fetch students of this classroom not yet assigned
-      const assignedStudentIds = benches.flatMap((b) =>
-        b.LayoutBenchStudents.map((s) => s.student_id)
+      // 3️⃣ Get already assigned student IDs
+      const assignedStudentIds = benches.flatMap((bench) =>
+        bench.LayoutBenchStudents.map((s) => s.student_id)
       );
 
+      // 4️⃣ Fetch students not yet assigned
       const students = await Student.findAll({
         where: {
           classroom_id,
@@ -398,34 +400,70 @@ module.exports = {
       if (!students.length) {
         return res.json({
           success: true,
-          message: "All students already assigned",
+          message: "All students are already assigned",
         });
       }
 
+      // 5️⃣ ROLL validation
       if (assigned_mode === "ROLL") {
-        // Ensure all students have roll_no
         const noRoll = students.filter((s) => s.roll_no === null);
         if (noRoll.length) {
           return res.status(400).json({
             success: false,
             message: `Cannot assign by ROLL: ${noRoll.length} student(s) have no roll_no`,
-            data: noRoll.map((s) => ({ id: s.id, name: s.first_name })),
+            data: noRoll.map((s) => ({
+              id: s.id,
+              name: s.first_name,
+            })),
           });
         }
       }
 
-      // 4️⃣ Shuffle if RANDOM
-      if (assigned_mode === "RANDOM") shuffleArray(students);
+      // 6️⃣ 🔴 SEAT CAPACITY VALIDATION (IMPORTANT)
+      const totalSeats = benches.reduce(
+        (sum, bench) => sum + bench.seat_capacity,
+        0
+      );
 
-      // 5️⃣ Assign students to benches
+      const occupiedSeats = benches.reduce(
+        (sum, bench) => sum + bench.LayoutBenchStudents.length,
+        0
+      );
+
+      const availableSeats = totalSeats - occupiedSeats;
+
+      if (availableSeats < students.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient seats: no seats available for ${students.length} students`,
+          data: {
+            totalSeats,
+            occupiedSeats,
+            availableSeats,
+            studentsToAssign: students.length,
+          },
+        });
+      }
+
+      // 7️⃣ Shuffle students if RANDOM
+      if (assigned_mode === "RANDOM") {
+        shuffleArray(students);
+      }
+
+      // 8️⃣ Assign students to benches
       const assignments = [];
       let studentIndex = 0;
 
       for (const bench of benches) {
-        const occupiedSeats = bench.LayoutBenchStudents.map((s) => s.seat_no);
+        const occupiedSeatNos = bench.LayoutBenchStudents.map((s) => s.seat_no);
+
         for (let seat = 1; seat <= bench.seat_capacity; seat++) {
-          if (!occupiedSeats.includes(seat) && studentIndex < students.length) {
+          if (
+            !occupiedSeatNos.includes(seat) &&
+            studentIndex < students.length
+          ) {
             const student = students[studentIndex++];
+
             assignments.push({
               layout_bench_id: bench.id,
               classroom_layout_id,
@@ -438,17 +476,20 @@ module.exports = {
         }
       }
 
-      // 6️⃣ Bulk insert
+      // 9️⃣ Bulk insert
       await LayoutBenchStudent.bulkCreate(assignments);
 
       return res.json({
         success: true,
-        message: `${assignments.length} students assigned`,
+        message: `${assignments.length} students assigned successfully`,
         data: assignments,
       });
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ success: false, message: err.message });
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
     }
   },
   async duplicateLayoutEmpty(req, res) {

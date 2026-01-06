@@ -12,5 +12,6 @@ router.get("/class/:class_id", BookController.getBooksByClass);
 router.post("/assign", BookController.assignBook);
 router.post("/return/:issue_id", BookController.returnBook);
 router.get("/:book_id/students", BookController.getStudentsByBook);
+router.get("/:student_id", BookController.getBooksByStudent);
 
 module.exports = router;

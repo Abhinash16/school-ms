@@ -287,23 +287,17 @@ module.exports = {
         });
       }
 
-      // ------------------ Map exam_subject_id → subject_id ------------------
-      const examSubjectMap = {};
-      examSubjects.forEach((es) => {
-        examSubjectMap[es.id] = es.subject_id;
-      });
-
       // ------------------ Prepare Payload ------------------
       const payload = examSubjects.map((es) => {
-        const mark = marks.find((m) => m.exam_subject_id === es.id);
+        const mark = marks.find((m) => m.subject_id === es.subject_id);
 
         return {
           exam_id,
           classroom_id,
-          subject_id: es.subject_id, // ✅ REQUIRED BY YOUR MODEL
+          subject_id: es.subject_id,
           student_id,
           marks_obtained: mark?.obtained_marks ?? 0,
-          is_absent: false,
+          is_absent: mark?.is_absent || false,
         };
       });
 
@@ -312,9 +306,42 @@ module.exports = {
         updateOnDuplicate: ["marks_obtained", "is_absent"],
       });
 
+      // ------------------ Calculate total, pass/fail ------------------
+      const savedMarks = await StudentExamMark.findAll({
+        where: {
+          exam_id,
+          classroom_id,
+          student_id,
+        },
+      });
+
+      let totalMarks = 0;
+      let totalSubjects = savedMarks.length;
+      let failedSubjects = 0;
+
+      const resultDetails = savedMarks.map((m) => {
+        totalMarks += m.marks_obtained;
+        const passed = m.marks_obtained >= 35; // assuming 35 is pass mark
+        if (!passed) failedSubjects++;
+        return {
+          subject_id: m.subject_id,
+          marks_obtained: m.marks_obtained,
+          pass: passed,
+        };
+      });
+
+      const overallPass = failedSubjects === 0;
+
       return res.json({
         success: true,
         message: "Marks saved successfully",
+        data: {
+          totalMarks,
+          totalSubjects,
+          failedSubjects,
+          overallPass,
+          resultDetails,
+        },
       });
     } catch (err) {
       console.error("❌ submitMarks error:", err);

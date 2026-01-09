@@ -217,27 +217,52 @@ module.exports = {
       const { examId } = req.params;
       const { classroom_id, subject_id, total_marks, passing_marks } = req.body;
 
+      // Validate subject_id
+      if (!Array.isArray(subject_id) || subject_id.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "subject_id must be a non-empty array",
+        });
+      }
+
+      // Check exam-class assignment
       const assigned = await ExamClass.findOne({
         where: { exam_id: examId, classroom_id },
       });
 
-      if (!assigned)
+      if (!assigned) {
         return res.status(400).json({
           success: false,
           message: "Exam not assigned to this class",
         });
+      }
 
-      const subject = await ExamSubject.create({
+      // Prepare bulk insert data
+      const subjectsPayload = subject_id.map((id) => ({
         exam_id: examId,
         classroom_id,
-        subject_id,
+        subject_id: id,
         total_marks,
         passing_marks,
+      }));
+
+      // Bulk create for better performance
+      const subjects = await ExamSubject.bulkCreate(subjectsPayload, {
+        validate: true,
+        returning: true,
       });
 
-      res.status(201).json({ success: true, data: subject });
+      return res.status(201).json({
+        success: true,
+        message: "Subjects added successfully",
+        data: subjects,
+      });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      console.error("Add Subject Error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
     }
   },
 

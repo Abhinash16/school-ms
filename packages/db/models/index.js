@@ -2,6 +2,8 @@
 const { sequelize } = require("../index");
 const Classroom = require("./Classroom");
 const ClassroomLayout = require("./ClassroomLayout");
+const Notice = require("./Notice");
+const NoticeTarget = require("./NoticeTarget");
 const ClassSubject = require("./ClassSubject");
 const ClassTimetable = require("./ClassTimetable");
 const ClassTimetableSlot = require("./ClassTimetableSlot");
@@ -67,6 +69,28 @@ School.hasMany(Student, {
 
 Student.belongsTo(School, {
   foreignKey: "school_id",
+});
+
+/* =========================
+   NOTICES (Assignment Based)
+========================= */
+
+// School → Notice
+School.hasMany(Notice, {
+  foreignKey: "school_id",
+  onDelete: "CASCADE",
+});
+Notice.belongsTo(School, {
+  foreignKey: "school_id",
+});
+
+// Notice → NoticeTarget
+Notice.hasMany(NoticeTarget, {
+  foreignKey: "notice_id",
+  onDelete: "CASCADE",
+});
+NoticeTarget.belongsTo(Notice, {
+  foreignKey: "notice_id",
 });
 
 PaymentOrder.hasMany(PaymentOrderLineItem, {
@@ -254,4 +278,6 @@ module.exports = {
   PaymentSettlementQueue,
   Book,
   BookIssue,
+  Notice,
+  NoticeTarget,
 };
